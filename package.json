@@ -1,17 +1,15 @@
 {
-  "name": "rahman-smm-panel-v3-api",
+  "name": "rahman-smm-panel-v3-auto",
   "version": "1.0.0",
-  "description": "Rahman SMM Panel v3 API (demo)",
+  "description": "Rahman SMM Panel v3 API (tanpa db.json, siap Vercel)",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "vercel dev",
+    "vercel-build": "echo 'Build selesai untuk Rahman SMM Panel v3'"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "lowdb": "^6.0.1",
-    "nanoid": "^4.0.0"
+    "express": "^4.18.2"
   }
 }
