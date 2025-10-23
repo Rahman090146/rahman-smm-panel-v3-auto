@@ -1,127 +1,73 @@
-// index.js
-// Rahman SMM Panel - simple API + static server
-// Dependencies: express, lowdb, nanoid, cors, dotenv
-// Paste file ini ke repo kamu (root) sebagai index.js
+// index.js - Rahman SMM Panel v3 (tanpa db.json, aman di Vercel)
+// Semua data disimpan di memori (reset saat restart)
 
 import express from "express";
-import { Low, JSONFile } from "lowdb";
-import { nanoid } from "nanoid";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// lokasi db.json
-const dbFile = path.join(__dirname, "db.json");
+// Data sementara (in-memory)
+let users = [
+  { id: "u1", username: "demo", email: "demo@local", balance: 30000 } // saldo demo 30k
+];
 
-// fallback initial data
-const defaultData = {
-  users: [
-    { id: "u1", username: "demo", email: "demo@local", balance: 30000 } // saldo demo 30k
-  ],
-  services: [
-    { id: 1, name: "YouTube Subscribers", rate: 15000, unit: 1000, min: 100, max: 50000 },
-    { id: 2, name: "YouTube Views", rate: 8000, unit: 1000, min: 100, max: 500000 },
-    { id: 3, name: "Instagram Followers", rate: 18000, unit: 1000, min: 10, max: 50000 }
-  ],
-  orders: []
-};
+let services = [
+  { id: 1, name: "YouTube Subscribers", rate: 15000, unit: 1000, min: 100, max: 50000 },
+  { id: 2, name: "YouTube Views", rate: 8000, unit: 1000, min: 100, max: 500000 },
+  { id: 3, name: "Instagram Followers", rate: 18000, unit: 1000, min: 10, max: 50000 }
+];
 
-// ensure db.json exists
-try {
-  if (!fs.existsSync(dbFile)) {
-    fs.writeFileSync(dbFile, JSON.stringify(defaultData, null, 2));
-  }
-} catch (err) {
-  console.error("Cannot create db.json:", err.message);
-}
+let orders = [];
 
-// lowdb setup
-const adapter = new JSONFile(dbFile);
-const db = new Low(adapter);
+// --- API Routes ---
 
-async function initDB() {
-  await db.read();
-  if (!db.data) {
-    db.data = defaultData;
-    try { await db.write(); } catch(e) { console.warn("write failed (init):", e.message); }
-  }
-}
-await initDB();
-
-// Serve static frontend from /public (if ada)
-const publicDir = path.join(__dirname, "public");
-if (fs.existsSync(publicDir)) {
-  app.use(express.static(publicDir));
-}
-
-// --- API Endpoints ---
-
-// GET services
-app.get("/api/services", async (req, res) => {
-  await db.read();
-  res.json(db.data.services || []);
+// Tes koneksi
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, message: "Rahman SMM Panel API aktif 💪", time: new Date().toISOString() });
 });
 
-// GET current demo user (first user)
-app.get("/api/user", async (req, res) => {
-  await db.read();
-  const user = db.data.users?.[0] || null;
-  res.json(user);
+// Ambil semua layanan
+app.get("/api/services", (req, res) => {
+  res.json(services);
 });
 
-// POST topup (adds amount to demo user balance)
-// body: { amount: number }
-app.post("/api/topup", async (req, res) => {
+// Ambil data user demo
+app.get("/api/user", (req, res) => {
+  res.json(users[0]);
+});
+
+// Tambah saldo (topup)
+app.post("/api/topup", (req, res) => {
   const { amount } = req.body;
-  if (!amount || isNaN(amount)) return res.status(400).json({ error: "Invalid amount" });
-  await db.read();
-  const user = db.data.users?.[0];
-  if (!user) return res.status(500).json({ error: "User not found" });
-  user.balance = (user.balance || 0) + Number(amount);
-  try {
-    await db.write();
-  } catch (e) {
-    console.warn("db write failed (topup):", e.message);
-  }
-  res.json({ success: true, balance: user.balance });
+  if (!amount || isNaN(amount)) return res.status(400).json({ error: "Nominal tidak valid" });
+
+  users[0].balance += Number(amount);
+  res.json({ success: true, balance: users[0].balance });
 });
 
-// POST order
-// body: { serviceId, qty, target }
-app.post("/api/order", async (req, res) => {
+// Buat pesanan baru
+app.post("/api/order", (req, res) => {
   const { serviceId, qty, target } = req.body;
   const q = Number(qty);
-  if (!serviceId || !q || !target) return res.status(400).json({ error: "Missing parameters" });
+  if (!serviceId || !q || !target) return res.status(400).json({ error: "Parameter tidak lengkap" });
 
-  await db.read();
-  const svc = (db.data.services || []).find(s => String(s.id) === String(serviceId));
-  if (!svc) return res.status(404).json({ error: "Service not found" });
+  const svc = services.find(s => s.id === Number(serviceId));
+  if (!svc) return res.status(404).json({ error: "Layanan tidak ditemukan" });
+  if (q < svc.min) return res.status(400).json({ error: `Minimal order ${svc.min}` });
+  if (q > svc.max) return res.status(400).json({ error: `Maksimal order ${svc.max}` });
 
-  if (q < (svc.min || 1)) return res.status(400).json({ error: `Minimum order is ${svc.min}` });
-  if (svc.max && q > svc.max) return res.status(400).json({ error: `Maximum order is ${svc.max}` });
+  const price = (svc.rate * q) / svc.unit;
+  const total = Math.round(price);
 
-  // price calculation: pro rata by unit (rate is per 'unit', e.g. per 1000)
-  const price = (svc.rate * q) / (svc.unit || 1000);
-  const total = Math.round(price); // round to integer
+  if (users[0].balance < total)
+    return res.status(400).json({ error: "Saldo tidak cukup" });
 
-  const user = db.data.users?.[0];
-  if (!user) return res.status(500).json({ error: "User not found" });
-  if ((user.balance || 0) < total) return res.status(400).json({ error: "Insufficient balance" });
-
-  // deduct balance
-  user.balance -= total;
+  users[0].balance -= total;
 
   const order = {
-    id: nanoid(10),
+    id: Date.now().toString(),
     serviceId: svc.id,
     serviceName: svc.name,
     qty: q,
@@ -131,39 +77,23 @@ app.post("/api/order", async (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  db.data.orders = db.data.orders || [];
-  db.data.orders.unshift(order); // recent first
-
-  try {
-    await db.write();
-  } catch (e) {
-    console.warn("db write failed (order):", e.message);
-    // still return success (but DB not persisted)
-  }
-
-  res.json({ success: true, order, balance: user.balance });
+  orders.unshift(order);
+  res.json({ success: true, order, balance: users[0].balance });
 });
 
-// GET orders (recent)
-app.get("/api/orders", async (req, res) => {
-  await db.read();
-  res.json(db.data.orders || []);
+// Lihat daftar pesanan
+app.get("/api/orders", (req, res) => {
+  res.json(orders);
 });
 
-// simple health
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, time: new Date().toISOString() });
-});
-
-// fallback: serve index.html if exists
-app.get("*", (req, res) => {
-  const indexHtml = path.join(publicDir, "index.html");
-  if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
-  return res.status(404).send("Not found");
-});
-
-// start server (local). On some serverless platforms this may not be used.
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Rahman SMM Panel API running on port ${PORT}`);
-});
+// Halaman depan sederhana
+app.get("/", (req, res) => {
+  res.send(`
+  <html>
+    <head>
+      <title>Rahman SMM Panel v3 🚀</title>
+      <style>
+        body { font-family: Arial; background: #f3f5ff; color: #222; text-align: center; margin-top: 10%; }
+        h1 { color: #0070f3; }
+        a { color: #0070f3; text-decoration: none; }
+        .card { background: white; display: inline-block; padding: 20px; border-radius:
