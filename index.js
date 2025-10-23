@@ -1,17 +1,21 @@
-// index.js - Rahman SMM Panel v3 (tanpa db.json, fix koneksi frontend)
-// Semua data disimpan di memori (reset saat restart)
-
+// Rahman SMM Panel v3 - API (Versi fix CORS dan siap konek ke Frontend)
 import express from "express";
 import cors from "cors";
 
 const app = express();
-
-// ✅ IZINKAN SEMUA DOMAIN (biar bisa diakses dari frontend di vercel)
-app.use(cors({ origin: "*" }));
-
 app.use(express.json());
 
-// Data sementara (in-memory)
+// ✅ Perbaikan CORS agar front bisa akses API dengan aman
+app.use(cors({
+  origin: [
+    "https://rahman-smm-panel-v3-front.vercel.app", // domain frontend kamu
+    "http://localhost:3000" // untuk testing lokal (opsional)
+  ],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
+// ===== Data sementara (in-memory) =====
 let users = [
   { id: "u1", username: "demo", email: "demo@local", balance: 30000 } // saldo demo 30k
 ];
@@ -24,7 +28,7 @@ let services = [
 
 let orders = [];
 
-// --- API Routes ---
+// ===== ROUTES =====
 
 // Tes koneksi
 app.get("/api/health", (req, res) => {
@@ -92,26 +96,27 @@ app.get("/api/orders", (req, res) => {
 // Halaman depan sederhana
 app.get("/", (req, res) => {
   res.send(`
-  <html>
-    <head>
-      <title>Rahman SMM Panel API v3 🚀</title>
-      <style>
-        body { font-family: Arial; background: #f4f7ff; color: #222; text-align: center; margin-top: 10%; }
-        h1 { color: #0070f3; }
-        a { color: #0070f3; text-decoration: none; }
-        .card { background: white; display: inline-block; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-      </style>
-    </head>
-    <body>
-      <div class="card">
-        <h1>Rahman SMM Panel API v3 🚀</h1>
-        <p>API aktif dan siap digunakan!</p>
-        <a href="/api/health">Cek Status</a> |
-        <a href="/api/services">Lihat Daftar Layanan</a>
-      </div>
-    </body>
-  </html>
+    <html>
+      <head>
+        <title>Rahman SMM Panel API 🚀</title>
+        <style>
+          body { font-family: Arial; background: #f4f6ff; color: #222; text-align: center; margin-top: 10%; }
+          h1 { color: #0070f3; }
+          .card { background: white; display: inline-block; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          a { color: #0070f3; text-decoration: none; display: block; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>Rahman SMM Panel API v3 🚀</h1>
+          <p>API aktif dan siap digunakan!</p>
+          <a href="/api/health">Cek Status</a>
+          <a href="/api/services">Lihat Daftar Layanan</a>
+        </div>
+      </body>
+    </html>
   `);
 });
 
+// Jalankan server (otomatis handle Vercel)
 export default app;
