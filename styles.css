@@ -1,0 +1,60 @@
+:root{
+  --blue:#0b77ff;
+  --soft:#f3f8ff;
+  --muted:#6b7280;
+  --card:#fff;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:linear-gradient(180deg,var(--soft),#eef4ff 60%);
+  color:#111827;
+  min-height:100vh;
+}
+.topbar{
+  background:var(--blue);
+  color:white;
+  padding:22px 18px;
+  border-bottom-left-radius:18px;
+  border-bottom-right-radius:18px;
+  text-align:center;
+}
+.topbar h1{margin:0;font-size:20px}
+.topbar .sub{margin:4px 0 0;font-size:12px;opacity:.95}
+
+.container{padding:16px;max-width:720px;margin:0 auto}
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:14px;
+  box-shadow:0 6px 18px rgba(13,30,61,0.06);
+  margin-bottom:14px;
+}
+.user-card{display:flex;justify-content:space-between;align-items:center}
+.user-card .muted{color:var(--muted);font-size:13px}
+.balance{
+  background:linear-gradient(90deg,#fff,#eaf4ff);
+  padding:8px 12px;border-radius:10px;font-weight:700;color:var(--blue)
+}
+
+.label{display:block;margin-top:12px;margin-bottom:6px;font-weight:600}
+select,input{width:100%;padding:12px 10px;border-radius:10px;border:1px solid #e6edf5;background:white;font-size:15px}
+input::placeholder{color:#9aa3b2}
+.row{display:flex;gap:12px;margin-top:10px}
+.row > div{flex:1}
+.readonly{padding:10px;border-radius:10px;border:1px solid #e6edf5;background:#fafcff;color:#0b3a66;font-weight:600}
+.actions{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;padding:12px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--blue);color:white}
+.btn.outline{background:white;border:1px solid #d6e6ff;color:var(--blue)}
+
+.orders{list-style:none;padding:0;margin:0}
+.orders li{padding:10px;border-radius:8px;border:1px solid #f1f5f9;margin-bottom:8px;font-size:14px}
+.small{font-size:12px}
+.center{text-align:center}
+.muted{color:var(--muted)}
+@media(min-width:720px){
+  .container{padding:24px}
+}

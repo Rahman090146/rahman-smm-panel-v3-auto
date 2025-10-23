@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rahman SMM Panel v3 - Mobile</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Rahman SMM Panel</h1>
+    <p class="sub">v3 — Demo</p>
+  </header>
+
+  <main class="container">
+    <section class="card user-card">
+      <div>
+        <strong id="user-name">Halo, Guest</strong>
+        <div id="user-email" class="muted"></div>
+      </div>
+      <div class="balance" id="user-balance">Rp0</div>
+    </section>
+
+    <section class="card order-card">
+      <h2>Pilih Layanan</h2>
+
+      <label class="label">Layanan</label>
+      <select id="service-select"></select>
+
+      <label class="label">Link Video / Akun</label>
+      <input id="target-input" placeholder="Masukkan link YouTube atau akun..." />
+
+      <label class="label">Jumlah Pesanan</label>
+      <input id="qty-input" type="number" value="100" min="1" />
+
+      <div class="row">
+        <div>
+          <label class="label small">Harga per 1000</label>
+          <div class="readonly" id="price-per-1000">Rp0 / 1000</div>
+        </div>
+        <div>
+          <label class="label small">Total Bayar</label>
+          <div class="readonly" id="total-pay">Rp0</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="topup-btn" class="btn outline">+ Rp10.000</button>
+        <button id="order-btn" class="btn primary">Order Sekarang</button>
+      </div>
+    </section>
+
+    <section class="card history-card">
+      <h2>Riwayat Pesanan</h2>
+      <ul id="orders-list" class="orders"></ul>
+    </section>
+
+    <footer class="small muted center">Demo: user: demo / pass: demo — Semua data in-memory</footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
