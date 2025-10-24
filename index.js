@@ -1,8 +1,6 @@
-// Rahman SMM Panel API v3 — versi stabil 🚀
+// Rahman SMM Panel API v3 - versi tanpa LowDB (aman di Vercel)
 import express from "express";
 import cors from "cors";
-import { Low } from "lowdb";
-import { JSONFile } from "lowdb/node";
 import { nanoid } from "nanoid";
 
 const app = express();
@@ -17,54 +15,45 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// 🧠 Setup LowDB
-const adapter = new JSONFile("db.json");
-const db = new Low(adapter);
+// 🧠 Database sementara (in-memory)
+let user = { username: "demo", balance: 30000 };
+let orders = [];
+let services = [
+  { id: 1, name: "YouTube Subscribers", rate: 15000, unit: 1000, min: 100, max: 50000 },
+  { id: 2, name: "YouTube Views", rate: 8000, unit: 1000, min: 100, max: 500000 },
+  { id: 3, name: "Instagram Followers", rate: 18000, unit: 1000, min: 10, max: 500000 }
+];
 
-// 🧩 Inisialisasi data jika belum ada
-await db.read();
-db.data ||= {
-  user: { username: "demo", balance: 30000 },
-  orders: [],
-  services: [
-    { id: 1, name: "YouTube Subscribers", rate: 15000, unit: 1000, min: 100, max: 50000 },
-    { id: 2, name: "YouTube Views", rate: 8000, unit: 1000, min: 100, max: 500000 },
-    { id: 3, name: "Instagram Followers", rate: 18000, unit: 1000, min: 10, max: 500000 }
-  ]
-};
-await db.write();
-
-// 🟢 Tes API
+// 🟢 Tes koneksi API
 app.get("/", (req, res) => {
   res.json({ ok: true, message: "Rahman SMM Panel API aktif 🚀" });
 });
 
-// 👤 User info
+// 👤 Info User
 app.get("/api/user", (req, res) => {
-  res.json(db.data.user);
+  res.json(user);
 });
 
-// 🧩 Layanan
+// 📋 Daftar Layanan
 app.get("/api/services", (req, res) => {
-  res.json(db.data.services);
+  res.json(services);
 });
 
-// 🛒 Order
-app.post("/api/order", async (req, res) => {
+// 🛒 Order Baru
+app.post("/api/order", (req, res) => {
   try {
     const { serviceId, qty, target } = req.body;
-    const service = db.data.services.find(s => s.id == serviceId);
+    const service = services.find(s => s.id == serviceId);
 
     if (!service) return res.json({ error: "Layanan tidak ditemukan" });
     if (qty < service.min || qty > service.max)
       return res.json({ error: `Jumlah harus antara ${service.min} dan ${service.max}` });
 
     const total = (qty / service.unit) * service.rate;
-    if (db.data.user.balance < total)
+    if (user.balance < total)
       return res.json({ error: "Saldo tidak cukup" });
 
-    db.data.user.balance -= total;
-
+    user.balance -= total;
     const order = {
       id: nanoid(8),
       serviceId,
@@ -74,12 +63,11 @@ app.post("/api/order", async (req, res) => {
       status: "Pending",
       date: new Date().toISOString()
     };
-
-    db.data.orders.push(order);
-    await db.write();
+    orders.push(order);
 
     res.json({ success: true, order });
   } catch (err) {
+    console.error("Error:", err);
     res.status(500).json({ error: "Terjadi kesalahan server." });
   }
 });
