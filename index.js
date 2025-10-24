@@ -1,10 +1,9 @@
-// Rahman SMM Panel API v3 - versi tanpa LowDB (aman di Vercel)
+// Rahman SMM Panel API v3 - FIX untuk Vercel 🚀
 import express from "express";
 import cors from "cors";
 import { nanoid } from "nanoid";
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 // ✅ Izinkan frontend kamu (CORS)
 app.use(cors({
@@ -72,6 +71,6 @@ app.post("/api/order", (req, res) => {
   }
 });
 
-// Jalankan server
-app.listen(port, () => console.log(`✅ API berjalan di port ${port}`));
+// ⚡ Jangan pakai app.listen() di Vercel!
+// Cukup export default app
 export default app;
