@@ -1,80 +1,46 @@
-// Rahman SMM Panel v3 - API Backend (tanpa database, in-memory)
 import express from "express";
 import cors from "cors";
+import { Low } from "lowdb";
+import { JSONFile } from "lowdb/node";
+import { nanoid } from "nanoid";
 
 const app = express();
-app.use(cors());
+const port = process.env.PORT || 3000;
+
+// ✅ Izinkan akses dari frontend kamu
+app.use(cors({
+  origin: [
+    "https://rahman-smm-panel-v3-front.vercel.app",
+    "https://rahman-smm-panel-v3-front-jyra.vercel.app" // cadangan domain build baru
+  ],
+}));
+
 app.use(express.json());
 
-// Data sementara (disimpan di memori)
-let user = { username: "demo", balance: 30000 };
+// 🧠 LowDB Setup
+const adapter = new JSONFile("db.json");
+const db = new Low(adapter, { user: { username: "demo", balance: 30000 }, services: [] });
 
-let services = [
-  { id: 1, name: "YouTube Subscribers", rate: 15000, unit: 1000, min: 100, max: 50000 },
-  { id: 2, name: "YouTube Views", rate: 8000, unit: 1000, min: 100, max: 500000 },
-  { id: 3, name: "Instagram Followers", rate: 18000, unit: 1000, min: 10, max: 50000 }
-];
-
-let orders = [];
-
-// 🌐 Tes koneksi
+// Endpoint dasar
 app.get("/", (req, res) => {
-  res.send({
-    ok: true,
-    message: "Rahman SMM Panel API aktif 🚀"
-  });
+  res.json({ ok: true, message: "Rahman SMM Panel API aktif 🚀" });
 });
 
-// 👤 Endpoint user demo
+// Endpoint user
 app.get("/api/user", (req, res) => {
-  res.json(user);
+  res.json(db.data.user);
 });
 
-// 📦 Endpoint daftar layanan
+// Endpoint layanan
 app.get("/api/services", (req, res) => {
-  res.json(services);
-});
-
-// 💰 Top-up saldo demo
-app.post("/api/topup", (req, res) => {
-  const { amount } = req.body;
-  if (!amount || isNaN(amount)) return res.status(400).json({ error: "Nominal tidak valid" });
-  user.balance += Number(amount);
-  res.json({ success: true, balance: user.balance });
-});
-
-// 🧾 Buat pesanan baru
-app.post("/api/order", (req, res) => {
-  const { serviceId, qty, target } = req.body;
-  const q = Number(qty);
-  if (!serviceId || !q || !target) return res.status(400).json({ error: "Data belum lengkap" });
-
-  const svc = services.find(s => s.id === Number(serviceId));
-  if (!svc) return res.status(404).json({ error: "Layanan tidak ditemukan" });
-
-  const price = (svc.rate * q) / svc.unit;
-  if (user.balance < price) return res.status(400).json({ error: "Saldo tidak cukup" });
-
-  user.balance -= price;
-  const order = {
-    id: Date.now(),
-    service: svc.name,
-    qty: q,
-    target,
-    total: price,
-    status: "pending",
-    createdAt: new Date().toISOString()
-  };
-
-  orders.unshift(order);
-  res.json({ success: true, order, balance: user.balance });
-});
-
-// 📋 Lihat daftar pesanan
-app.get("/api/orders", (req, res) => {
-  res.json(orders);
+  res.json([
+    { id: 1, name: "YouTube Subscribers", rate: 15000, unit: 1000, min: 100, max: 50000 },
+    { id: 2, name: "YouTube Views", rate: 8000, unit: 1000, min: 100, max: 500000 },
+    { id: 3, name: "Instagram Followers", rate: 18000, unit: 1000, min: 10, max: 500000 }
+  ]);
 });
 
 // Jalankan server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ API aktif di port ${PORT}`));
+app.listen(port, () => {
+  console.log(`API berjalan di port ${port}`);
+});
